@@ -2,6 +2,8 @@ package power
 
 import (
 	"fmt"
+	"net"
+	"strconv"
 	"strings"
 )
 
@@ -19,21 +21,28 @@ var (
 // destinations.
 type Source struct {
 	Name      string
-	Address   string
+	Host      string
+	Port      string
 	Community string // SNMP community name
 	Retries   uint
 }
 
+// HostPort returns the combination of "host:port". Its format matches that of
+// net.JoinHostPort().
+func (s Source) HostPort() string {
+	return net.JoinHostPort(s.Host, s.Port)
+}
+
 // String returns a string encoded representation of the power source.
 func (s Source) String() (value string) {
-	if s.Community == "" {
-		value = s.Address
-	} else {
-		value = fmt.Sprintf("%s@%s", s.Community, s.Address)
+	value = s.HostPort()
+
+	if s.Community != "" {
+		value = fmt.Sprintf("%s@%s", s.Community, value)
 	}
 
 	if s.Name != "" {
-		value = fmt.Sprintf("[%s]%s", s.Name, value)
+		value = fmt.Sprintf("%s~%s", value, s.Name)
 	}
 
 	return value
@@ -43,16 +52,15 @@ func (s Source) String() (value string) {
 //
 // The address is expected to be in one of these forms:
 //
-//   [name]community@host:port
-//   [name]community@host
-//   [name]host:port
-//   [name]host
+//   community@host:port~name
+//   community@host~name
+//   host:port~name
+//   host~name
 //   community@host:port
 //   community@host
 //   host:port
 //   host
 //
-// [ups2s]tripplite@ups2s:161,tripplite@ups2n:161
 func ParseSource(s string) (src Source, err error) {
 	if s == "" {
 		err = fmt.Errorf("empty source address")
@@ -60,34 +68,41 @@ func ParseSource(s string) (src Source, err error) {
 	}
 
 	// Name
-	if strings.HasPrefix(s, "[") && len(s) > 1 {
-		if elements := strings.SplitN(s[1:], "]", 2); len(elements) == 2 {
-			src.Name = elements[0]
-			s = elements[1]
-		}
+	if elements := strings.SplitN(s, "~", 2); len(elements) == 2 {
+		src.Name = elements[1]
+		s = elements[0]
 	}
 
-	// Community, Address
+	// Community, Host, Port
+	var hostport string
 	if elements := strings.SplitN(s, "@", 2); len(elements) == 2 {
 		src.Community = elements[0]
-		src.Address = elements[1]
+		hostport = elements[1]
 	} else {
 		src.Community = DefaultCommunity
-		src.Address = s
+		hostport = s
+	}
+
+	// Remember that ipv6 hosts can look like this: "[::]:port"
+	hasPort := strings.LastIndex(hostport, ":") > strings.LastIndex(hostport, "]")
+	if hasPort {
+		src.Host, src.Port, err = net.SplitHostPort(hostport)
+		if err != nil {
+			err = fmt.Errorf("invalid host port for source \"%s\": %v", s, err)
+			return
+		}
+	} else {
+		src.Host = hostport
+		src.Port = strconv.Itoa(DefaultPort)
 	}
 
 	// Retries
 	src.Retries = DefaultRetries
 
 	// Validation
-	if src.Address == "" {
-		err = fmt.Errorf("no address specified for source \"%s\"", s)
+	if src.Host == "" {
+		err = fmt.Errorf("no host address specified for source \"%s\"", s)
 		return
-	}
-
-	// Port
-	if !strings.Contains(src.Address, ":") {
-		src.Address = fmt.Sprintf("%s:%d", src.Address, DefaultPort)
 	}
 
 	return

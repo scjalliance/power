@@ -27,7 +27,7 @@ func (v Value) String() string {
 func (v Value) StatName() string {
 	sname := v.Source.Name
 	if v.Source.Name == "" {
-		sname = v.Source.Address
+		sname = v.Source.Host
 	}
 	return fmt.Sprintf("%s %s", sname, v.Stat.Name)
 }

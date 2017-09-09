@@ -12,7 +12,7 @@ import (
 func Query(source Source, stats ...Statistic) (results []Value, err error) {
 	snmp, err := snmpgo.NewSNMP(snmpgo.SNMPArguments{
 		Version:   snmpgo.V2c,
-		Address:   source.Address,
+		Address:   source.HostPort(),
 		Retries:   source.Retries,
 		Community: source.Community,
 	})
