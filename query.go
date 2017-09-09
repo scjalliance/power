@@ -3,6 +3,7 @@ package power
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/k-sone/snmpgo"
 	"github.com/scjalliance/power/snmpvar"
@@ -29,6 +30,7 @@ func Query(source Source, stats ...Statistic) (results []Value, err error) {
 		value := Value{
 			Source: source,
 			Stat:   stat,
+			Time:   time.Now(),
 		}
 		value.Value, value.Err = query(snmp, stat.OID, stat.Mapper)
 		results = append(results, value)
