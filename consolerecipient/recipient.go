@@ -3,7 +3,7 @@ package consolerecipient
 import (
 	"fmt"
 
-	"github.com/scjalliance/power/power"
+	"github.com/scjalliance/power"
 )
 
 type recipient struct{}

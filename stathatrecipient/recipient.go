@@ -3,7 +3,7 @@ package stathatrecipient
 import (
 	"fmt"
 
-	"github.com/scjalliance/power/power"
+	"github.com/scjalliance/power"
 )
 
 // Recipient is a StatHat recipient of power management values.

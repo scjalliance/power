@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/scjalliance/power"
 	"github.com/scjalliance/power/consolerecipient"
-	"github.com/scjalliance/power/power"
 	"github.com/scjalliance/power/stathatrecipient"
 )
 
