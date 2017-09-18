@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/scjalliance/power"
 	"github.com/scjalliance/power/consolerecipient"
@@ -22,6 +23,7 @@ func main() {
 		community    = os.Getenv("COMMUNITY")
 		intervalStr  = os.Getenv("INTERVAL")
 		recipientStr = os.Getenv("RECIPIENT")
+		interval     time.Duration
 		verbose      bool
 	)
 
@@ -82,28 +84,59 @@ func main() {
 		os.Exit(2)
 	}
 
-	execute(sources, stats, recipients, verbose)
+	if intervalStr != "" {
+		interval, err = time.ParseDuration(intervalStr)
+		if err != nil {
+			fmt.Printf("Unable to parse interval: %v", err)
+			os.Exit(2)
+		}
+	}
+
+	shutdown := NewShutdown()
+
+	execute(sources, stats, recipients, verbose, shutdown)
+
+	if interval > 0 {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				execute(sources, stats, recipients, verbose, shutdown)
+			case <-shutdown:
+				return
+			}
+		}
+	}
 }
 
-func execute(sources []power.Source, stats []power.Statistic, recipients []power.Recipient, verbose bool) {
+func execute(sources []power.Source, stats []power.Statistic, recipients []power.Recipient, verbose bool, shutdown Shutdown) {
 	for i, source := range sources {
-		//fmt.Printf("Source %d (%s):\n", i, source)
 		for _, r := range recipients {
+			if shutdown.Signaled() {
+				return
+			}
 			if handler, ok := r.(power.SourceHandler); ok {
 				handler.SendSource(i, source)
 			}
 		}
+
 		var values []power.Value
 		values, err := power.Query(source, stats...)
 		for _, r := range recipients {
 			if err == nil {
 				for _, v := range values {
+					if shutdown.Signaled() {
+						return
+					}
 					if verbose || !power.IsNotSupported(v.Err) {
 						r.Send(v)
-						//fmt.Printf("  %s: %s\n", v.Stat.Name, v)
 					}
 				}
 			} else {
+				if shutdown.Signaled() {
+					return
+				}
 				if handler, ok := r.(power.ErrorHandler); ok {
 					handler.SendQueryError(i, source, err)
 				}
