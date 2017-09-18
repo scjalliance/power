@@ -13,12 +13,14 @@ import (
 )
 
 const (
+	defaultSource     = "localhost"
 	defaultStatistics = "all"
 	defaultRecipients = "console"
 )
 
 func main() {
 	var (
+		sourceStr     = os.Getenv("SOURCE")
 		statisticsStr = os.Getenv("STATISTICS")
 		community     = os.Getenv("COMMUNITY")
 		intervalStr   = os.Getenv("INTERVAL")
@@ -27,6 +29,9 @@ func main() {
 		verbose       bool
 	)
 
+	if sourceStr == "" {
+		sourceStr = defaultSource
+	}
 	if statisticsStr == "" {
 		statisticsStr = defaultStatistics
 	}
@@ -49,7 +54,13 @@ func main() {
 	power.RegisterRecipientType(stathatrecipient.Parse, "stathat")
 	power.RegisterRecipientType(consolerecipient.Parse, "console")
 
-	sources, err := power.ParseSources(flag.Args())
+	var sources []power.Source
+	var err error
+	if flag.NArg() > 0 {
+		sources, err = power.ParseSources(flag.Args())
+	} else {
+		sources, err = power.ParseSources(strings.Split(sourceStr, ","))
+	}
 	if err != nil {
 		fmt.Printf("Source parsing error: %s\n", err)
 		os.Exit(2)
