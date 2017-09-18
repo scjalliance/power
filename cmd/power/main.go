@@ -13,22 +13,22 @@ import (
 )
 
 const (
-	defaultSource     = "localhost"
+	defaultStatistics = "all"
 	defaultRecipients = "console"
 )
 
 func main() {
 	var (
-		sourceStr    = os.Getenv("SOURCE")
-		community    = os.Getenv("COMMUNITY")
-		intervalStr  = os.Getenv("INTERVAL")
-		recipientStr = os.Getenv("RECIPIENT")
-		interval     time.Duration
-		verbose      bool
+		statisticsStr = os.Getenv("STATISTICS")
+		community     = os.Getenv("COMMUNITY")
+		intervalStr   = os.Getenv("INTERVAL")
+		recipientStr  = os.Getenv("RECIPIENT")
+		interval      time.Duration
+		verbose       bool
 	)
 
-	if sourceStr == "" {
-		sourceStr = defaultSource
+	if statisticsStr == "" {
+		statisticsStr = defaultStatistics
 	}
 	if community == "" {
 		community = power.DefaultCommunity
@@ -37,7 +37,8 @@ func main() {
 		recipientStr = defaultRecipients
 	}
 
-	flag.StringVar(&sourceStr, "s", sourceStr, "comma separated list of power sources to query, in form [name]community@server:port")
+	//flag.StringVar(&sourceStr, "s", sourceStr, "comma separated list of power sources to query, in form [name]community@server:port")
+	flag.StringVar(&statisticsStr, "q", statisticsStr, "comma separated list of statistics to query, \"all\" to include all statistics")
 	flag.StringVar(&community, "c", community, "default SNMP community for sources")
 	flag.StringVar(&intervalStr, "n", intervalStr, "interval between executions, blank for single execution")
 	flag.StringVar(&recipientStr, "r", recipientStr, "comma separated list of output recipients")
@@ -48,13 +49,7 @@ func main() {
 	power.RegisterRecipientType(stathatrecipient.Parse, "stathat")
 	power.RegisterRecipientType(consolerecipient.Parse, "console")
 
-	args := flag.Args()
-	if len(args) == 0 {
-		fmt.Println("No statistics specified.")
-		os.Exit(2)
-	}
-
-	sources, err := power.ParseSources(strings.Split(sourceStr, ","))
+	sources, err := power.ParseSources(flag.Args())
 	if err != nil {
 		fmt.Printf("Source parsing error: %s\n", err)
 		os.Exit(2)
@@ -64,7 +59,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	recipients, err := power.ParseRecipients(recipientStr)
+	recipients, err := power.ParseRecipients(strings.Split(recipientStr, ","))
 	if err != nil {
 		fmt.Printf("Recipients parsing error: %s\n", err)
 		os.Exit(2)
@@ -74,7 +69,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	stats, err := power.ParseStatistics(args)
+	stats, err := power.ParseStatistics(strings.Split(statisticsStr, ","))
 	if err != nil {
 		fmt.Printf("Statistics parsing error: %s\n", err)
 		os.Exit(2)

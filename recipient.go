@@ -71,9 +71,8 @@ func ParseRecipient(s string) (recipient Recipient, err error) {
 
 // ParseRecipients takes the given set of strings and attempts to parse each one
 // as a recipient.
-func ParseRecipients(s string) (recipients []Recipient, err error) {
-	elements := strings.Split(s, ",")
-	for _, element := range elements {
+func ParseRecipients(s []string) (recipients []Recipient, err error) {
+	for _, element := range s {
 		recipient, parseErr := ParseRecipient(element)
 		if parseErr != nil {
 			return nil, parseErr
