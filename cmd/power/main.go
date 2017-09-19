@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -117,6 +118,9 @@ func main() {
 }
 
 func execute(sources []power.Source, stats []power.Statistic, recipients []power.Recipient, verbose bool, shutdown Shutdown) {
+	ctx, cancel := shutdown.WithContext(context.Background())
+	defer cancel()
+
 	for i, source := range sources {
 		for _, r := range recipients {
 			if shutdown.Signaled() {
@@ -128,7 +132,7 @@ func execute(sources []power.Source, stats []power.Statistic, recipients []power
 		}
 
 		var values []power.Value
-		values, err := power.Query(source, stats...)
+		values, err := power.Query(ctx, source, stats...)
 		for _, r := range recipients {
 			if err == nil {
 				for _, v := range values {

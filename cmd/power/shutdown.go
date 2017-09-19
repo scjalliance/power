@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"syscall"
@@ -31,4 +32,21 @@ func (s Shutdown) Signaled() bool {
 	default:
 		return false
 	}
+}
+
+// WithContext returns a child context of parent that will be cancelled when
+// the shutdown is signaled.
+//
+// When finished with the context, the returned cancellation function must be
+// called in order to release resources.
+func (s Shutdown) WithContext(parent context.Context) (ctx context.Context, cancel context.CancelFunc) {
+	ctx, cancel = context.WithCancel(parent)
+	go func() {
+		select {
+		case <-ctx.Done():
+		case <-s:
+			cancel()
+		}
+	}()
+	return
 }

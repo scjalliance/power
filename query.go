@@ -1,6 +1,7 @@
 package power
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -10,7 +11,13 @@ import (
 )
 
 // Query will attempt to retrieve the source's statistics via SNMP.
-func Query(source Source, stats ...Statistic) (results []Value, err error) {
+func Query(ctx context.Context, source Source, stats ...Statistic) (results []Value, err error) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+
 	snmp, err := snmpgo.NewSNMP(snmpgo.SNMPArguments{
 		Version:   snmpgo.V2c,
 		Address:   source.HostPort(),
@@ -32,7 +39,7 @@ func Query(source Source, stats ...Statistic) (results []Value, err error) {
 			Stat:   stat,
 			Time:   time.Now(),
 		}
-		value.Value, value.Err = query(snmp, stat.OID, stat.Mapper)
+		value.Value, value.Err = query(ctx, snmp, stat.OID, stat.Mapper)
 		results = append(results, value)
 	}
 	return
@@ -40,7 +47,13 @@ func Query(source Source, stats ...Statistic) (results []Value, err error) {
 
 // query sends an SNMP v2c request and parses the value contained in the
 // response.
-func query(snmp *snmpgo.SNMP, oids snmpgo.Oids, mapper snmpvar.Float64) (value float64, err error) {
+func query(ctx context.Context, snmp *snmpgo.SNMP, oids snmpgo.Oids, mapper snmpvar.Float64) (value float64, err error) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+
 	// Execute the query
 	pdu, err := snmp.GetRequest(oids)
 	if err != nil {
