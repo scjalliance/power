@@ -4,6 +4,8 @@
 
 Power infrastructure health sampling and monitoring.
 
+A Docker image is available on [Docker Hub](https://hub.docker.com/r/scjalliance/power/).
+
 ## Example Docker Invocation
 
 ```
