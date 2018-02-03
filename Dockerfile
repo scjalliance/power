@@ -8,6 +8,8 @@ RUN apk --no-cache add git
 WORKDIR /go/src/github.com/scjalliance/power
 COPY . .
 
+WORKDIR /go/src/github.com/scjalliance/power/cmd/power
+
 ENV CGO_ENABLED=0
 
 RUN go-wrapper download
