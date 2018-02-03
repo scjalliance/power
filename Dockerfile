@@ -1,9 +1,23 @@
-FROM golang:latest
+# --------
+# Stage 1: Build
+# -------
+FROM golang:alpine as builder
 
-WORKDIR /go/src/app
+RUN apk --no-cache add git
+
+WORKDIR /go/src/github.com/scjalliance/power
 COPY . .
 
-WORKDIR /go/src/app/cmd/power
-RUN go get -v -d -u . && go install -v .
+ENV CGO_ENABLED=0
 
-CMD ["/go/bin/power"]
+RUN go-wrapper download
+RUN go-wrapper install
+
+# --------
+# Stage 2: Release
+# --------
+FROM gcr.io/distroless/base
+
+COPY --from=builder /go/bin/power /
+
+CMD ["/power"]
