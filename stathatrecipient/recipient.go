@@ -3,6 +3,7 @@ package stathatrecipient
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -51,7 +52,7 @@ func (r *Recipient) Send(v power.Value) {
 
 	name := r.StatName(v)
 
-	fmt.Printf("Sending data for \"%s\" to StatHat...", name)
+	fmt.Printf("Sending \"%s\" value %s to StatHat...", name, strconv.FormatFloat(v.Value, 'f', -1, 64))
 	reporter := stathat.New().EZKey(r.ezkey)
 	err := reporter.PostEZ(name, stathat.KindValue, v.Value, &v.Time)
 	if err != nil {
